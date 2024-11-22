@@ -1,0 +1,84 @@
+int seq[100]; // Arreglo para almacenar la secuencia de luces
+int rodada = 0; // Contador de rondas
+int paso = 0; // Contador de pasos
+int leds[4] = {2, 3, 4, 5}; // Arreglo con los pines de los LEDs
+int botones[4] = {8, 9, 10, 11}; // Arreglo con los pines de los botones
+int boton_presionado = 0; // Variable para almacenar el botón presionado
+boolean perder = false; // Variable para indicar si el jugador ha perdido
+int buzzer = 6; // Pin del buzzer
+int sonidos[4] = {400, 450, 500, 550}; // Arreglo con los tonos para cada LED
+
+void setup() {
+  pinMode(buzzer, OUTPUT); // Configura el pin del buzzer como salida
+  tone(buzzer, sonidos[2]); // Genera un tono en el buzzer con la frecuencia del tercer tono
+  delay(20); // Espera 20 milisegundos
+  noTone(buzzer); // Detiene el tono del buzzer
+  for (int i = 0; i < 4; i++) {
+    pinMode(leds[i], OUTPUT); // Configura los pines de los LEDs como salidas
+  }
+  for (int i = 0; i < 4; i++) {
+    pinMode(botones[i], INPUT); // Configura los pines de los botones como entradas
+  }
+  randomSeed(analogRead(0)); // Inicializa la semilla aleatoria usando el valor de una lectura analógica
+}
+
+void loop() {
+  if (perder) {
+    rodada = 0; // Reinicia el contador de rondas
+    paso = 0; // Reinicia el contador de pasos
+    perder = false; // Reinicia la variable de perder
+  }
+
+  if (rodada == 0) {
+    for (int i = 0; i < 4; i++) {
+      digitalWrite(leds[i], HIGH); // Enciende todos los LEDs
+    }
+    delay(1000); // Espera 1000 milisegundos
+    for (int i = 0; i < 4; i++) {
+      digitalWrite(leds[i], LOW); // Apaga todos los LEDs
+    }
+    delay(500); // Espera 500 milisegundos
+  }
+  
+  seq[rodada++] = random(0, 4);
+
+  for (int i = 0; i < rodada; i++) {
+    digitalWrite(leds[seq[i]], HIGH);
+    tone(buzzer, sonidos[seq[i]]);
+    delay(500);
+    digitalWrite(leds[seq[i]], LOW);
+    noTone(buzzer);
+    delay(100);
+  }
+
+  for (int i = 0; i < rodada; i++) {
+    boolean jugada_efectuada = false;
+    while (!jugada_efectuada) {
+      for (int j = 0; j < 4; j++) {
+        if (digitalRead(botones[j]) == HIGH) {
+          boton_presionado = j; // Almacena el índice del botón presionado
+          digitalWrite(leds[j], HIGH); // Enciende el LED correspondiente al botón presionado
+          delay(500); // Espera 500 milisegundos
+          digitalWrite(leds[j], LOW); // Apaga el LED
+          jugada_efectuada = true; // Marca la jugada como efectuada
+        }
+      }
+      delay(100); // Espera 100 milisegundos antes de comprobar nuevamente
+    }
+    if (seq[paso] != boton_presionado) {
+      for (int j = 0; j < 4; j++) {
+        digitalWrite(leds[j], HIGH); // Enciende todos los LEDs
+        delay(500); // Espera 500 milisegundos
+        digitalWrite(leds[j], LOW); // Apaga todos los LEDs
+      }
+      tone(buzzer, 100); // Genera un tono en el buzzer con frecuencia de 100
+      delay(100); // Espera 100 milisegundos
+      noTone(buzzer); // Detiene el tono del buzzer
+      perder = true; // Marca como perdedor
+      break; // Sale del bucle for si ha perdido
+    }
+    paso++; // Incrementa el contador de pasos
+  }
+  paso = 0; // Reinicia el contador de pasos
+  delay(1000); // Espera un segundo antes de iniciar la siguiente ronda
+}
